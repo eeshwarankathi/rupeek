@@ -36,7 +36,7 @@ xhttp.onreadystatechange = function() {
         let alt = parseFloat(children[0].innerHTML);
         let time = new Date(children[1].innerHTML).getTime();
         if(prevLat && prevLong && prevAlt && prevTime) {
-          elevationGained = elevationGained + alt - prevAlt;
+          elevationGained += alt - prevAlt;
           let ctime = (time-prevTime)/1000;
           if(prevLat == lat && prevLong == lon && prevAlt == alt) {
             idleTime += ctime;
