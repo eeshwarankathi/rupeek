@@ -1,5 +1,15 @@
 // Import stylesheets
 import './style.css';
+import Feature from 'ol/Feature';
+import OlPoint from 'ol/geom/Point';
+import { fromLonLat, transform } from 'ol/proj';
+import { Circle as CircleStyle, Fill, Stroke, Style, Icon } from 'ol/style';
+import OlVectorSource from 'ol/source/Vector';
+import OlVectorLayer from 'ol/layer/Vector';
+import OlXYZ from 'ol/source/XYZ';
+import OlTileLayer from 'ol/layer/Tile';
+import OlView from 'ol/View';
+import OlMap from 'ol/Map';
 
 var xhttp = new XMLHttpRequest();
 xhttp.onreadystatechange = function() {
@@ -15,8 +25,10 @@ xhttp.onreadystatechange = function() {
       xmlDoc.async = false;
       xmlDoc.loadXML(txt);
     }
-    const appDiv = document.getElementById('problem1Solution');
+    const problem1Solution = document.getElementById('problem1Solution');
+    // const problem2Solution = document.getElementById('problem2Solution');
     var elements = xmlDoc.getElementsByTagName("trkpt");
+    var markers = [];
     var totalDistance = 0;
     var maxSpeed = 0;
     var averageSpeed = 0;
@@ -54,6 +66,19 @@ xhttp.onreadystatechange = function() {
         prevLong = lon;
         prevAlt = alt;
         prevTime = time;
+        let localmarker = new Feature({
+          geometry: new OlPoint(fromLonLat([lon, lat])),
+          style: new Style({
+            image: new Icon({
+              anchor: [0.5, 0.5],
+              anchorXUnits: 'fraction',
+              anchorYUnits: 'fraction',
+              src:'http://maps.google.com/mapfiles/ms/micons/blue.png',
+              crossOrigin: 'anonymous',
+            })
+          })
+        });
+        markers.push(localmarker);      
       }
     }
     averageSpeed = (totalDistance/totalTime);
@@ -65,7 +90,30 @@ xhttp.onreadystatechange = function() {
     solution1 += 'm <br>Moving Time: '+movingTime;
     solution1 += 's <br>Total time Elapsed: '+totalTime;
     solution1 += 's';
-    appDiv.innerHTML = solution1;
+    problem1Solution.innerHTML = solution1;
+    var vectorSource = new OlVectorSource({
+          features: markers
+        });
+        var vectorLayer = new OlVectorLayer({
+          source: vectorSource,
+          updateWhileAnimating: true,
+          updateWhileInteracting: true,
+        });
+        var source = new OlXYZ({
+          url: 'https://a.tile.openstreetmap.org/{z}/{x}/{y}.png' // https
+        });
+        var layer = new OlTileLayer({
+          source: source
+        });
+        var view = new OlView({
+          zoom: 10
+        });
+        var map = new OlMap({
+          target: 'problem2Solution',
+          layers: [this.layer, this.vectorLayer],
+          view: this.view
+        });
+      map.getView().fit(this.vectorSource.getExtent());
   }
 };
 xhttp.open("GET", "https://dl.dropboxusercontent.com/s/8nvqnasci6l76nz/Problem.gpx", true);

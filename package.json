@@ -2,5 +2,7 @@
   "name": "rupeek",
   "version": "0.0.0",
   "private": true,
-  "dependencies": {}
+  "dependencies": {
+    "ol":"5.3.3"
+  }
 }
