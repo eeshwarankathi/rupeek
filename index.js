@@ -1,16 +1,5 @@
 // Import stylesheets
 import './style.css';
-import Feature from 'ol/Feature';
-import OlPoint from 'ol/geom/Point';
-import { fromLonLat, transform } from 'ol/proj';
-import { Circle as CircleStyle, Fill, Stroke, Style, Icon } from 'ol/style';
-import OlVectorSource from 'ol/source/Vector';
-import OlVectorLayer from 'ol/layer/Vector';
-import OlXYZ from 'ol/source/XYZ';
-import OlTileLayer from 'ol/layer/Tile';
-import OlView from 'ol/View';
-import OlMap from 'ol/Map';
-
 var xhttp = new XMLHttpRequest();
 xhttp.onreadystatechange = function() {
   if (this.readyState == 4 && this.status == 200) {
@@ -26,9 +15,10 @@ xhttp.onreadystatechange = function() {
       xmlDoc.loadXML(txt);
     }
     const problem1Solution = document.getElementById('problem1Solution');
-    // const problem2Solution = document.getElementById('problem2Solution');
     var elements = xmlDoc.getElementsByTagName("trkpt");
     var markers = [];
+	var markedLatLon = [];
+	var uniquelatlon = [];
     var totalDistance = 0;
     var maxSpeed = 0;
     var averageSpeed = 0;
@@ -66,21 +56,32 @@ xhttp.onreadystatechange = function() {
         prevLong = lon;
         prevAlt = alt;
         prevTime = time;
-        let localmarker = new Feature({
-          geometry: new OlPoint(fromLonLat([lon, lat])),
-          style: new Style({
-            image: new Icon({
-              anchor: [0.5, 0.5],
-              anchorXUnits: 'fraction',
-              anchorYUnits: 'fraction',
-              src:'http://maps.google.com/mapfiles/ms/micons/blue.png',
-              crossOrigin: 'anonymous',
+		var latlon = {
+		latitude: lat,
+		longitude: lon
+		};
+		markedLatLon.push(latlon);
+      }
+    }
+	uniquelatlon = markedLatLon.reduce((unique, o) => {
+    if(!unique.some(obj => obj.latitude == o.latitude && obj.longitude == o.longitude)) {
+      unique.push(o);
+    }
+    return unique;
+},[]);
+	for(let i of uniquelatlon) {
+		let localmarker = new ol.Feature({
+          geometry: new ol.geom.Point(ol.proj.fromLonLat([i['longitude'], i['latitude']])),
+          style: new ol.style.Style({
+            image: new ol.style.Circle({
+				radius: 5,
+				fill: new ol.style.Fill({color: 'red'}),
+				stroke: new ol.style.Stroke({color: 'yellow', width: 1})
             })
           })
         });
-        markers.push(localmarker);      
-      }
-    }
+        markers.push(localmarker);
+	}
     averageSpeed = (totalDistance/totalTime);
     movingTime = totalTime - idleTime;
     var solution1 = 'Total Distance: '+totalDistance;
@@ -91,29 +92,30 @@ xhttp.onreadystatechange = function() {
     solution1 += 's <br>Total time Elapsed: '+totalTime;
     solution1 += 's';
     problem1Solution.innerHTML = solution1;
-    var vectorSource = new OlVectorSource({
+    var vectorSource = new ol.source.Vector({
           features: markers
-        });
-        var vectorLayer = new OlVectorLayer({
-          source: vectorSource,
-          updateWhileAnimating: true,
-          updateWhileInteracting: true,
-        });
-        var source = new OlXYZ({
-          url: 'https://a.tile.openstreetmap.org/{z}/{x}/{y}.png' // https
-        });
-        var layer = new OlTileLayer({
-          source: source
-        });
-        var view = new OlView({
-          zoom: 10
-        });
-        var map = new OlMap({
-          target: 'problem2Solution',
-          layers: [this.layer, this.vectorLayer],
-          view: this.view
-        });
-      map.getView().fit(this.vectorSource.getExtent());
+    });
+	var vectorLayer = new ol.layer.Vector({
+        source: vectorSource,
+        updateWhileAnimating: true,
+        updateWhileInteracting: true,
+	});
+	var source = new ol.source.XYZ({
+		url: 'https://a.tile.openstreetmap.org/{z}/{x}/{y}.png'
+    });
+	var layer = new ol.layer.Tile({
+        source: new ol.source.OSM()
+	});
+    var view = new ol.View({
+        zoom: 10
+	});
+	var map = new ol.Map({
+        target: 'map',
+        layers: [layer, vectorLayer],
+        view: view
+    });
+    map.getView().fit(vectorSource.getExtent());
+	map.render();
   }
 };
 xhttp.open("GET", "https://dl.dropboxusercontent.com/s/8nvqnasci6l76nz/Problem.gpx", true);
